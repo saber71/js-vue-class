@@ -1,4 +1,3 @@
-import EventEmitter from "eventemitter3"
 import {
   defineComponent,
   type EmitsOptions,
@@ -82,20 +81,13 @@ export function toNative<Props extends VueComponentBaseProps, Emit extends Emits
       onBeforeUnmount(instance.onBeforeUnmounted.bind(instance))
 
       onBeforeUnmount(() => {
-        for (let { propName, methodName } of metadata.disposables) {
-          const disposable = (instance as any)[propName]
-          if (typeof disposable === "function") disposable()
-          else disposable?.[methodName ?? "dispose"]?.()
-        }
-        for (let item of metadata.eventListener) {
-          if (typeof item.eventTarget === "string") {
-            const array = document.getElementsByClassName(item.eventTarget) as any
-            for (let el of array) {
-              el.removeEventListener(item.eventName, (instance as any)[item.methodName])
-            }
-          } else if (item.eventTarget instanceof EventEmitter)
-            item.eventTarget.off(item.eventName, (instance as any)[item.methodName])
-          else item.eventTarget.removeEventListener(item.eventName, (instance as any)[item.methodName])
+        for (let customDecorator of metadata.vueDecorators) {
+          customDecorator.onUnmount?.(
+            instance,
+            (instance as any)[customDecorator.decoratedName],
+            customDecorator,
+            metadata
+          )
         }
       })
 

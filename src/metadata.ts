@@ -1,4 +1,4 @@
-import EventEmitter from "eventemitter3"
+import { type Class, deepClone } from "@heraclius/js-tools"
 import {
   computed,
   inject,
@@ -24,8 +24,7 @@ import {
   type WatchOptions
 } from "vue"
 import { onBeforeRouteLeave, onBeforeRouteUpdate, type RouteLocationNormalized } from "vue-router"
-import { type Class, debounce, deepClone, throttle } from "@heraclius/js-tools"
-import { type CustomHandler, type HookType, type WatcherTarget } from "./decorators"
+import { type HookType, type WatcherTarget } from "./decorators"
 import { VueComponent } from "./vue-component"
 import { VueDirective } from "./vue-directive"
 import { VueService } from "./vue-service"
@@ -34,25 +33,21 @@ export interface ComponentOption {
   provideThis?: string | boolean
 }
 
+export interface CustomDecoratorOption {
+  decoratedName: string
+  onSetup?: (instance: any, target: any, option: CustomDecoratorOption, metadata: VueClassMetadata) => void
+  onUnmount?: (instance: any, target: any, option: CustomDecoratorOption, metadata: VueClassMetadata) => void
+}
+
 const childInstMapKey: InjectionKey<Record<string, VueComponent>> = Symbol("childInstMap")
 export const initMutKey = Symbol("init-mut")
 
 export class VueClassMetadata {
-  // 只需在渲染进程初始化. 调用invoke发送channel给主进程
-  static invokeFn: (...args: any[]) => Promise<any> = () => Promise.resolve()
-  // 只需在主进程初始化. 在ipcMain上调用handle监听channel
-  static ipcHandler: (channel: string, callback: Function) => void = () => void 0
-  // 需要在渲染进程和主进程初始化. 在ipcMain或ipcRenderer上调用on监听事件
-  static listenIpc: (channel: string, callback: Function) => Function = () => () => 0
-  static catchError?: (err: Error | any) => void
-
   isComponent = false
 
   componentOption?: ComponentOption
 
   isService = false
-
-  isIpc = false
 
   isDirective = false
 
@@ -66,15 +61,7 @@ export class VueClassMetadata {
 
   readonly mutts: { propName: string; shallow?: boolean }[] = []
 
-  readonly disposables: { propName: string; methodName?: string }[] = []
-
   readonly readonlys: { propName: string; shallow?: boolean }[] = []
-
-  readonly throttles: { methodName: string; args: any[] }[] = []
-
-  readonly debounce: { methodName: string; args: any[] }[] = []
-
-  readonly invokes: Array<{ propName: string; args: any[] }> = []
 
   readonly links: {
     refName?: string
@@ -84,16 +71,6 @@ export class VueClassMetadata {
   }[] = []
 
   readonly vueInject: Array<{ propName: string; provideKey: any }> = []
-
-  readonly bindThis: string[] = []
-
-  readonly setup: string[] = []
-
-  readonly eventListener: Array<{
-    eventTarget: EventTarget | EventEmitter<any> | string
-    eventName: string
-    methodName: string
-  }> = []
 
   readonly hooks: { methodName: string; type: HookType }[] = []
 
@@ -107,53 +84,16 @@ export class VueClassMetadata {
 
   readonly computers: string[] = []
 
-  readonly customHandlers: Record<string | symbol, Parameters<typeof CustomHandler>[0]> = {}
+  readonly vueDecorators: Array<CustomDecoratorOption> = []
+
+  handleCustomDecorators(instance: any) {
+    for (let customDecorator of this.vueDecorators) {
+      customDecorator.onSetup?.(instance, instance[customDecorator.decoratedName], customDecorator, this)
+    }
+  }
 
   clone() {
     return deepClone(this) as VueClassMetadata
-  }
-
-  handleSetup(instance: any) {
-    for (let methodName of this.setup) {
-      instance[methodName].call(instance)
-    }
-  }
-
-  handleDebounce(instance: any) {
-    for (let item of this.debounce) {
-      const method = instance[item.methodName].bind(instance)
-      instance[item.methodName] = debounce(method, item.args[0])
-    }
-  }
-
-  handleThrottle(instance: any) {
-    for (let item of this.throttles) {
-      const method = instance[item.methodName].bind(instance)
-      instance[item.methodName] = throttle(method, item.args[0])
-    }
-  }
-
-  handleEventListener(instance: object) {
-    for (let item of this.eventListener) {
-      const method = (instance as any)[item.methodName].bind(instance)
-      const eventTarget = item.eventTarget
-      if (typeof eventTarget === "string") {
-        const className = eventTarget
-        onMounted(() => {
-          const array = document.getElementsByClassName(className) as any
-          for (let el of array) {
-            el.addEventListener(item.eventName, method)
-          }
-        })
-      } else if (eventTarget instanceof EventEmitter) eventTarget.on(item.eventName, method)
-      else eventTarget.addEventListener(item.eventName, method)
-    }
-  }
-
-  handleInvokes(instance: object) {
-    for (let item of this.invokes) {
-      VueClassMetadata.invokeFn(...item.args).then((res) => ((instance as any)[item.propName] = res))
-    }
   }
 
   handleComponentOption(instance: VueComponent) {
@@ -168,13 +108,6 @@ export class VueClassMetadata {
         const key = typeof provideThis === "boolean" ? instance.constructor.name : provideThis
         provide(key, instance)
       }
-    }
-  }
-
-  handleBindThis(instance: object) {
-    for (let methodName of this.bindThis) {
-      const method = (instance as any)[methodName]
-      ;(instance as any)[methodName] = method.bind(instance)
     }
   }
 
@@ -354,12 +287,6 @@ export class VueClassMetadata {
       }
     }
   }
-
-  handleCustomHandler(instance: any) {
-    Object.entries(this.customHandlers).forEach(([propName, options]) => {
-      options.fn(instance, this, propName)
-    })
-  }
 }
 
 const metadataMap = new Map<any, VueClassMetadata>()
@@ -383,14 +310,9 @@ export function applyMetadata(clazz: any, instance: VueService | object) {
   metadata.handleMut(instance)
   metadata.handleReadonly(instance)
   metadata.handleVueInject(instance)
-  metadata.handleDebounce(instance)
-  metadata.handleThrottle(instance)
   metadata.handleComputer(instance)
   metadata.handleWatchers(instance)
-  metadata.handleBindThis(instance)
-  metadata.handleInvokes(instance)
-  metadata.handleEventListener(instance)
-  metadata.handleCustomHandler(instance)
+  metadata.handleCustomDecorators(instance)
   if (instance instanceof VueComponent) {
     metadata.handleLink(instance)
     metadata.handleHook(instance)
@@ -400,7 +322,7 @@ export function applyMetadata(clazz: any, instance: VueService | object) {
   if (instance instanceof VueService) {
     instance.setup()
   }
-  metadata.handleSetup(instance)
+  // 如果instance是Service，则将instance挂在全局上
   if (metadata.isService) (globalThis as any)[instance.constructor.name] = instance
   return metadata
 }

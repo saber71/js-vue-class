@@ -1,5 +1,6 @@
 export * from "./constants"
 export * from "./decorators"
+export * from "./decorators-extra"
 export * from "./types"
 export * from "./vue-class"
 export * from "./vue-component"

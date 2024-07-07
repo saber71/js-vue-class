@@ -1,10 +1,9 @@
-import type EventEmitter from "eventemitter3"
+import { getDecoratedName, Injectable } from "@heraclius/injectify"
+import { type Class } from "@heraclius/js-tools"
 import { type WatchOptions } from "vue"
 import type { RouteLocationNormalized } from "vue-router"
-import type { Class } from "@heraclius/js-tools"
-import { getDecoratedName, Injectable } from "@heraclius/injectify"
 import { ModuleName } from "./constants"
-import { applyMetadata, type ComponentOption, getOrCreateMetadata, VueClassMetadata } from "./metadata"
+import { applyMetadata, type ComponentOption, type CustomDecoratorOption, getOrCreateMetadata } from "./metadata"
 import type { VueComponentClass } from "./types"
 import { VueComponent, type VueComponentBaseProps } from "./vue-component"
 import type { VueDirective } from "./vue-directive"
@@ -76,32 +75,6 @@ export function Service(option?: Parameters<typeof Injectable>[0]) {
 }
 
 /*
- * Ipc 函数用于创建一个服务并将其注册为 IPC (Inter-Process Communication) 服务。
- * 它接受一个可选参数来配置 Injectable 装饰器的行为，然后返回一个函数，
- * 该函数用于将服务注册应用到指定的类上。
- */
-export function Ipc(option?: Parameters<typeof Injectable>[0]) {
-  // 创建一个 Injectable 装饰器函数，配置默认的模块名、单例模式和创建时的元数据处理。
-  const fn = Injectable(
-    Object.assign(
-      {
-        moduleName: ModuleName, // 默认模块名
-        singleton: true, // 默认为单例模式
-        onCreate: (instance: object) => applyMetadata(instance.constructor, instance), // 创建实例时应用元数据
-        createImmediately: true
-      },
-      option // 合并用户自定义的配置
-    )
-  )
-
-  // 返回一个处理函数，用于在类上应用服务注册。
-  return (clazz: Class, ctx?: any) => {
-    fn(clazz, ctx) // 调用@Injectable装饰器函数进行基础注册。
-    getOrCreateMetadata(clazz, ctx).isIpc = true // 标记该类为Ipc。
-  }
-}
-
-/*
  * 为类装饰器创建路由守卫
  * @param option 可选参数对象，用于配置路由守卫的行为
  * @param option.matchTo 可以是一个正则表达式或者一个函数，用于匹配目标路径
@@ -156,18 +129,6 @@ export function Directive(name?: string) {
     }
     // 设置指令名
     metadata.directiveName = name
-  }
-}
-
-/**
- * 为属性装饰器，用于标记属性为可被一次性使用（Disposable）的。
- * @param methodName 可选参数，指定方法名。如果指定了方法名，则该属性会被视为一个方法，并且该方法会被标记为可被一次性使用。
- * @returns 返回一个函数，该函数接收两个参数：目标对象和属性名/属性符号，然后对这些属性进行标记。
- */
-export function Disposable(methodName?: string) {
-  return (target: object, arg: any) => {
-    const metadata = getOrCreateMetadata(target, arg)
-    metadata.disposables.push({ propName: getName(arg), methodName })
   }
 }
 
@@ -302,92 +263,12 @@ export function Watcher<T extends VueService>(option?: {
   }
 }
 
-/**
- * 一个用于绑定当前上下文到某个方法上的装饰器工厂函数。
- * 当这个装饰器被应用于方法上时，它会将该方法的上下文（this）与特定的参数绑定起来，
- * 以便于在不同的调用环境中能够保持方法的上下文一致性。
- */
-export function BindThis() {
-  return (target: object, arg: any) => {
-    // 获取或创建目标对象与参数对应的元数据，并将当前方法的名称加入到bindThis数组中
-    getOrCreateMetadata(target, arg).bindThis.push(getName(arg))
-  }
-}
-
-/**
- * 被装饰的方法将在实例初始化时执行
- */
-export function Setup() {
-  return (target: object, arg: any) => {
-    // 获取或创建目标对象与参数对应的元数据，并将当前方法的名称加入到setup数组中
-    getOrCreateMetadata(target, arg).setup.push(getName(arg))
-  }
-}
-
-/**
- * 生成一个用于监听事件的装饰器。
- * @param eventTarget 事件的目标对象，比如window或者document，也可以是EventEmitter对象，或是dom的类名。
- * @param eventName 要监听的事件名称，必须是WindowEventMap中定义的事件名。
- * @returns 返回一个函数，该函数接收两个参数：target和arg。target是应用装饰器的对象，arg是装饰的方法。
- */
-export function EventListener<Events extends EventEmitter.ValidEventTypes>(
-  eventTarget: EventTarget | EventEmitter<Events> | string,
-  eventName: keyof WindowEventMap | keyof Events
-) {
-  return (target: object, arg: any) => {
-    // 为指定的方法添加事件监听信息到metadata中
-    getOrCreateMetadata(target, arg).eventListener.push({
-      methodName: getName(arg), // 获取方法名
-      eventName: eventName as any, // 事件名称
-      eventTarget // 事件目标
+export function VueDecorator(option: Omit<CustomDecoratorOption, "decoratedName">) {
+  return (target: any, arg: any) => {
+    getOrCreateMetadata(target, arg).vueDecorators.push({
+      ...option,
+      decoratedName: getDecoratedName(arg) as any
     })
-  }
-}
-
-/**
- * Throttle装饰器：为方法添加节流逻辑。
- * @returns 返回一个函数，该函数用于修饰目标对象的方法。
- */
-export function Throttle(delay?: number) {
-  return (target: object, arg: any) => {
-    // 为方法添加节流配置到元数据中
-    getOrCreateMetadata(target, arg).throttles.push({
-      methodName: getName(arg),
-      args: [delay ?? 100]
-    })
-  }
-}
-
-/**
- * Debounce装饰器：为方法添加防抖逻辑。
- * @returns 返回一个函数，该函数用于修饰目标对象的方法。
- */
-export function Debounce(delay?: number) {
-  return (target: object, arg: any) => {
-    // 为方法添加防抖配置到元数据中
-    getOrCreateMetadata(target, arg).debounce.push({
-      methodName: getName(arg),
-      args: [delay ?? 100]
-    })
-  }
-}
-
-/**
- * 定义一个自定义处理函数，用于在Vue组件中处理特定的属性或方法。
- * @param options 配置选项，包含处理函数和可选参数。
- * @param options.fn 处理函数，当组件实例、元数据和属性名传入时被调用。
- * @param options.args 处理函数的可选参数。
- * @returns 返回一个装饰器，用于标记Vue组件类的属性或方法。
- */
-export function CustomHandler(options: {
-  fn: (instance: any, metadata: VueClassMetadata, propName: string) => void
-  args?: any
-}) {
-  // 返回一个装饰器函数，该函数接受目标对象和属性名/方法名作为参数
-  return (target: object, arg: any) => {
-    // 通过getOrCreateMetadata函数获取或创建目标对象的元数据，并在其中添加或更新自定义处理函数信息
-    // 为指定的目标对象和方法名添加或获取元数据，并将当前的自定义处理信息（名称和方法名）添加到元数据的customHandlers数组中
-    getOrCreateMetadata(target, arg).customHandlers[getDecoratedName(arg)] = options
   }
 }
 
