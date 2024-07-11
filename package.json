@@ -10,24 +10,24 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@heraclius/external-deps-plugin": "^0.1.1",
-    "@heraclius/injectify": "^0.1.0",
-    "@heraclius/js-tools": "^0.1.0",
-    "@types/node": "^20.14.10",
-    "eventemitter3": "^5.0.1",
-    "unplugin-swc": "^1.5.1",
-    "vite": "^5.3.3",
-    "vite-plugin-dts": "^3.9.1",
-    "vitest": "^2.0.2",
-    "vue": "^3.4.31",
-    "vue-router": "^4.4.0"
+    "@heraclius/external-deps-plugin": "latest",
+    "@heraclius/injectify": "latest",
+    "@heraclius/js-tools": "latest",
+    "@types/node": "latest",
+    "eventemitter3": "latest",
+    "unplugin-swc": "latest",
+    "vite": "latest",
+    "vite-plugin-dts": "latest",
+    "vitest": "latest",
+    "vue": "latest",
+    "vue-router": "latest"
   },
   "peerDependencies": {
-    "@heraclius/injectify": "^0.1.0",
-    "@heraclius/js-tools": "^0.1.0",
-    "eventemitter3": "^5.0.1",
-    "vue": "^3.4.31",
-    "vue-router": "^4.4.0"
+    "@heraclius/injectify": "latest",
+    "@heraclius/js-tools": "latest",
+    "eventemitter3": "latest",
+    "vue": "latest",
+    "vue-router": "latest"
   },
   "publishConfig": {
     "access": "public"

@@ -9,37 +9,37 @@ importers:
   .:
     devDependencies:
       '@heraclius/external-deps-plugin':
-        specifier: ^0.1.1
+        specifier: latest
         version: 0.1.1(vite@5.3.3(@types/node@20.14.10))
       '@heraclius/injectify':
-        specifier: ^0.1.0
+        specifier: latest
         version: 0.1.0(@heraclius/js-tools@0.1.0)(eventemitter3@5.0.1)(reflect-metadata@0.2.2)
       '@heraclius/js-tools':
-        specifier: ^0.1.0
+        specifier: latest
         version: 0.1.0
       '@types/node':
-        specifier: ^20.14.10
+        specifier: latest
         version: 20.14.10
       eventemitter3:
-        specifier: ^5.0.1
+        specifier: latest
         version: 5.0.1
       unplugin-swc:
-        specifier: ^1.5.1
+        specifier: latest
         version: 1.5.1(@swc/core@1.6.13)(rollup@4.18.1)
       vite:
-        specifier: ^5.3.3
+        specifier: latest
         version: 5.3.3(@types/node@20.14.10)
       vite-plugin-dts:
-        specifier: ^3.9.1
+        specifier: latest
         version: 3.9.1(@types/node@20.14.10)(rollup@4.18.1)(typescript@5.4.2)(vite@5.3.3(@types/node@20.14.10))
       vitest:
-        specifier: ^2.0.2
+        specifier: latest
         version: 2.0.2(@types/node@20.14.10)
       vue:
-        specifier: ^3.4.31
+        specifier: latest
         version: 3.4.31(typescript@5.4.2)
       vue-router:
-        specifier: ^4.4.0
+        specifier: latest
         version: 4.4.0(vue@3.4.31(typescript@5.4.2))
 
 packages:
