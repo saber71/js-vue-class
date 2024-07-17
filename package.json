@@ -1,6 +1,6 @@
 {
   "name": "@heraclius/vue-class",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "description": "通过依赖注入的方式，让开发者能够以类（Class）的形式来编写 Vue 组件",
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@heraclius/external-deps-plugin": "^0.1.1",
+    "@heraclius/external-deps-plugin": "^1.0.0",
     "@heraclius/injectify": "^0.1.0",
     "@heraclius/js-tools": "^0.1.0",
     "@types/node": "^20.14.11",
