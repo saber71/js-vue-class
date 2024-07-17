@@ -11,8 +11,8 @@
   },
   "devDependencies": {
     "@heraclius/external-deps-plugin": "^1.0.0",
-    "@heraclius/injectify": "^0.1.0",
-    "@heraclius/js-tools": "^0.1.0",
+    "@heraclius/injectify": "^1.0.0",
+    "@heraclius/js-tools": "^1.0.0",
     "@types/node": "^20.14.11",
     "eventemitter3": "^5.0.1",
     "unplugin-swc": "^1.5.1",
@@ -23,8 +23,8 @@
     "vue-router": "^4.4.0"
   },
   "peerDependencies": {
-    "@heraclius/injectify": "^0.1.0",
-    "@heraclius/js-tools": "^0.1.0",
+    "@heraclius/injectify": "^1.0.0",
+    "@heraclius/js-tools": "^1.0.0",
     "eventemitter3": "^5.0.1",
     "vue": "^3.4.31",
     "vue-router": "^4.4.0"
