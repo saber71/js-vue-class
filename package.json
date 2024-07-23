@@ -18,7 +18,7 @@
     "unplugin-swc": "^1.5.1",
     "vite": "^5.3.4",
     "vite-plugin-dts": "^3.9.1",
-    "vitest": "^2.0.3",
+    "vitest": "^2.0.4",
     "vue": "^3.4.33",
     "vue-router": "^4.4.0"
   },
