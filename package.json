@@ -13,14 +13,14 @@
     "@heraclius/external-deps-plugin": "^1.1.0",
     "@heraclius/injectify": "^1.1.0",
     "@heraclius/js-tools": "^1.1.0",
-    "@types/node": "^20.14.11",
+    "@types/node": "^20.17.1",
     "eventemitter3": "^5.0.1",
     "unplugin-swc": "^1.5.1",
-    "vite": "^5.3.4",
+    "vite": "^5.4.10",
     "vite-plugin-dts": "^3.9.1",
-    "vitest": "^2.0.4",
-    "vue": "^3.4.33",
-    "vue-router": "^4.4.0"
+    "vitest": "^2.1.3",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5"
   },
   "peerDependencies": {
     "@heraclius/injectify": "^1.0.0",
